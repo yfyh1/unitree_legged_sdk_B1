@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -fPIC  -rdynamic CMakeFiles/example_position.dir/example/example_position.cpp.o  -o example_position  -L/home/unitree/Unitree/sdk/unitree_legged_sdk_B1/lib/cpp/amd64 -Wl,-rpath,/home/unitree/Unitree/sdk/unitree_legged_sdk_B1/lib/cpp/amd64 -pthread -lunitree_legged_sdk 
