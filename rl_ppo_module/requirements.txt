@@ -1,0 +1,17 @@
+# 强化学习框架（包含 PPO、SAC 等算法）
+stable-baselines3>=2.0.0
+
+# 强化学习环境标准接口
+gymnasium>=0.29.0
+
+# 核心数学运算库
+numpy>=1.20.0
+
+# 用于打包和管理依赖的工具
+setuptools
+
+# 可选：用于追踪训练进度与图表
+tensorboard
+
+# YAML 配置文件解析（用于 ppo_config.yaml）
+pyyaml==6.0.3
