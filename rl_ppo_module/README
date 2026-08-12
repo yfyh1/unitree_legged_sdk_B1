@@ -24,8 +24,8 @@
 │ ├── reward_design_doc.md # 奖励函数设计文档
 │ ├── requirements.txt # Python 依赖列表
 │ ├── README.md # 本文件
-│ └── models/ # 训练好的模型权重
-
+│ └── run_grid # 仿真脚本
+└── models/ # 训练好的模型权重
 
 
 
@@ -40,7 +40,9 @@ python rl_ppo_module/ppo_train.py
 训练过程约 1~2 分钟（80,000 步），终端会实时输出训练指标
 训练完成后，模型自动保存至 models/ppo_grid_model.zip
 
-
+步骤 3：进行模型仿真
+python rl_ppo_module/run_grid.py
+通过pygame观察训练结果
 
 
 文件功能说明
@@ -49,3 +51,4 @@ env_module/GridEnv.py	            21×16 栅格环境，定义动作空间、观
 rl_ppo_module/ppo_train.py	        PPO 训练入口，读取ppo_config.yaml，调用stable_baselines3.PPO执行训练
 rl_ppo_module/ppo_config.yaml	    超参数配置文件
 rl_ppo_module/reward_design_doc.md	奖励函数设计文档（公式、动机、代码实现对应关系）
+rl_ppo_module/run_grid              运行仿真环境，观察训练成果   
