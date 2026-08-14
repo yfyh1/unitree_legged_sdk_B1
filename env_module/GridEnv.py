@@ -1,11 +1,11 @@
 """
 目标：从定起点到定终点
 """
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import pygame
+import random
 
 # ============================================================
 # 1. 环境主类：继承 gymnasium.Env，必须实现 reset、step、render 等接口
@@ -73,10 +73,20 @@ class GridNavEnv(gym.Env):
         """
         super().reset(seed=seed)
 
-        # 设置智能体起点（必须确保此位置不在障碍物列表中）
-        self.agent_pos = [5, 5]      # 左上角安全区
         # 设置目标终点（新位置，在右下角安全区）
         self.goal_pos = [14, 19]     # x=14（最大15），y=19（最大20）
+
+        # ---- 随机生成起点（排除障碍物和终点） ----
+        # 收集所有合法的白色格子（避开边界、障碍物、终点）
+        valid_positions = []
+        for x in range(0, self.grid_size_x):   # x: 0~15
+            for y in range(0, self.grid_size_y):  # y: 0~20
+                # 排除：障碍物、终点
+                if (x, y) not in self.obstacles and [x, y] != self.goal_pos:
+                    valid_positions.append([x, y])
+
+        # 从合法位置中随机选择一个作为起点
+        self.agent_pos = random.choice(valid_positions)
 
         return self._get_obs(), {}
 
