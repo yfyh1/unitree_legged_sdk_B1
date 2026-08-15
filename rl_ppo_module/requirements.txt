@@ -15,3 +15,6 @@ tensorboard
 
 # YAML 配置文件解析（用于 ppo_config.yaml）
 pyyaml==6.0.3
+
+# 生成 MP4 视频的编码器后端
+pip install imageio[ffmpeg]
