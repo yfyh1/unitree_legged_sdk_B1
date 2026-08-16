@@ -1,5 +1,5 @@
 """
-目标：从定起点到定终点
+目标：从随机起点到定终点
 """
 import gymnasium as gym
 from gymnasium import spaces
@@ -11,13 +11,6 @@ import random
 # 1. 环境主类：继承 gymnasium.Env，必须实现 reset、step、render 等接口
 # ============================================================
 class GridNavEnv(gym.Env):
-    """
-    16×21 离散栅格环境，智能体从起点导航至终点，避开静态障碍物。
-    观测空间：4维 [agent_x, agent_y, goal_x, goal_y]
-    动作空间：离散4 (0上, 1下, 2左, 3右)
-    奖励函数：距离奖励 + 步数惩罚 + 碰撞惩罚 + 到达奖励（详见 step 方法）
-    """
-    # 元数据：告诉 Gymnasium 渲染模式和帧率（每秒10帧，方便观察移动过程）
     metadata = {"render_modes": ["human"], "render_fps": 10}
     
     # ----------------------------------------------------------
@@ -45,17 +38,72 @@ class GridNavEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=0,
             high=max(self.grid_size_x, self.grid_size_y) - 1,  # = 20
-            shape=(4,),
+            shape=(8,),
             dtype=np.float32
         )
 
         # ---- 静态障碍物列表（坐标均在 0~15, 0~20 范围内） ----
-        # 格式：(列号x, 行号y)
-        self.obstacles = [
-            (3, 4), (3, 5), (3, 6),
-            (10, 8), (11, 8),
-            (7, 12), (8, 12)
+                # 格式：(列号x, 行号y)
+        # self.obstacles = [
+        #     (4, 9), (5, 9), (6, 9), (13, 9),
+        #     (4, 10), (5, 10), (6, 10), (13, 10),
+        #     (0, 11), (14, 11),
+        #     (0, 12), (15, 12)
+        # ]
+        # -------- 障碍物整数区间 (x_min, x_max, y_min, y_max) ----------
+        obstacle_rects_int = [
+            # (1, 12, 0, 1),    # 1
+            # (13, 16, 0, 1),   # 2
+            # (6, 8, 1, 2),     # 3
+            # (14, 15, 1, 2),   # 4
+            # (0, 1, 2, 18),    # 5
+            # (4, 6, 10, 12),   # 6
+            # (15, 16, 5, 6),   # 7
+            # (14, 15, 9, 10),  # 8
+            # (14, 16, 10, 13), # 9
+            # (0, 7, 20, 21),   # 10
+            # (14, 15, 20, 21), # 11
+            # (8, 15, 15, 20),  # 12
+            # # -------- 添加的四条边界墙壁 ----------
+            # (0, 15, 0, 0),    # 上边界 (y=0)
+            # (0, 15, 20, 20),  # 下边界 (y=20)
+            # (0, 0, 0, 20),    # 左边界 (x=0)
+            # (15, 15, 0, 20)   # 右边界 (x=15)
+        
+        
+            (0, 12, 0, 1),    # 1
+            (13, 16, 0, 1),   # 2
+            (6, 8, 1, 2),     # 3
+            (14, 15, 1, 2),   # 4
+            (0, 1, 2, 10),    # 5
+            (15, 16, 2, 9),   # 6
+            (14, 15, 5, 6),   # 7
+            (14, 15, 9, 10),  # 8
+            (4, 7, 10, 12), # 9
+            (13, 14, 10, 12),   # 10
+            (13, 16, 12, 15), # 11
+            (1, 8, 15, 19),  # 12
+            (11, 16, 15, 19),
+            (1, 16, 19, 20),
+            (0, 7, 20, 21),
+            (14, 16, 20, 21),
+            (0, 1, 17, 18),
+            # -------- 添加的四条边界墙壁 ----------
+            (0, 15, 0, 0),    # 上边界 (y=0)
+            (0, 15, 20, 20),  # 下边界 (y=20)
+            (0, 0, 0, 20),    # 左边界 (x=0)
+            (15, 15, 0, 20)   # 右边界 (x=15)
         ]
+
+        # -------- 生成障碍物坐标 ----------
+        self.obstacles = []
+        for (x_min, x_max, y_min, y_max) in obstacle_rects_int:
+            for x in range(x_min, x_max ):
+                for y in range(y_min, y_max ):
+                    # 确保坐标在网格范围内（防止越界）
+                    if 0 <= x < self.grid_size_x and 0 <= y < self.grid_size_y:
+                        self.obstacles.append((x, y))
+
 
         # Pygame 窗口和时钟（渲染时使用，初始为 None）
         self.window = None
@@ -65,16 +113,10 @@ class GridNavEnv(gym.Env):
     # 1.2 reset：重置环境到初始状态（起点和终点固定）
     # ----------------------------------------------------------
     def reset(self, seed=None, options=None):
-        """
-        重置环境，返回初始观测值。
-        - 起点固定为 (1, 1)（必须为白色通路）
-        - 终点固定为 (14, 19)（必须为白色通路）
-        - 返回：(obs, info) 元组，info 为空字典
-        """
         super().reset(seed=seed)
 
         # 设置目标终点（新位置，在右下角安全区）
-        self.goal_pos = [14, 19]     # x=14（最大15），y=19（最大20）
+        self.goal_pos = [12, 0]     # x=14（最大15），y=19（最大20）
 
         # ---- 随机生成起点（排除障碍物和终点） ----
         # 收集所有合法的白色格子（避开边界、障碍物、终点）
@@ -93,13 +135,28 @@ class GridNavEnv(gym.Env):
     # ----------------------------------------------------------
     # 1.3 辅助方法：生成观测值（4 维数组）
     # ----------------------------------------------------------
+    # def _get_obs(self):
+    #     return np.array([
+    #         self.agent_pos[0],
+    #         self.agent_pos[1],
+    #         self.goal_pos[0],
+    #         self.goal_pos[1]
+    #     ], dtype=np.float32)
+
+
     def _get_obs(self):
-        return np.array([
-            self.agent_pos[0],
-            self.agent_pos[1],
-            self.goal_pos[0],
-            self.goal_pos[1]
-        ], dtype=np.float32)
+        x, y = self.agent_pos
+        gx, gy = self.goal_pos
+
+        # 检查四个方向是否可走（1=可走，0=不可走/撞墙）
+        up = 0 if (y - 1 < 0 or (x, y - 1) in self.obstacles) else 1
+        down = 0 if (y + 1 >= self.grid_size_y or (x, y + 1) in self.obstacles) else 1
+        left = 0 if (x - 1 < 0 or (x - 1, y) in self.obstacles) else 1
+        right = 0 if (x + 1 >= self.grid_size_x or (x + 1, y) in self.obstacles) else 1
+
+        return np.array([x, y, gx, gy, up, down, left, right], dtype=np.float32)
+
+
 
     # ----------------------------------------------------------
     # 1.4 辅助方法：计算曼哈顿距离（用于奖励塑形）
@@ -117,7 +174,7 @@ class GridNavEnv(gym.Env):
         奖励函数包含四项：
           - 距离奖励：靠近目标 +2/格，远离目标 -2/格
           - 步数惩罚：每步 -0.5（鼓励最短路径）
-          - 碰撞惩罚：撞墙/撞障碍物 -10，立即终止
+          - 碰撞惩罚：撞墙/撞障碍物 -20，立即终止
           - 到达奖励：到达终点 +100，立即终止
         """
 
@@ -135,18 +192,28 @@ class GridNavEnv(gym.Env):
         # 边界碰撞检测（使用 grid_size_x 和 grid_size_y）
         if (new_pos[0] < 0 or new_pos[0] >= self.grid_size_x or
             new_pos[1] < 0 or new_pos[1] >= self.grid_size_y):
-            reward = -10.0
+            reward = -20.0
             terminated = True
 
         elif tuple(new_pos) in self.obstacles:
-            reward = -10.0
+            reward = -20.0
             terminated = True
 
         else:
             self.agent_pos = new_pos
             new_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
             reward = (old_dist - new_dist) * 2.0
-            reward -= 0.5
+            reward -= 0.2
+
+        # ===== 新增：濒墙惩罚（靠近墙/障碍物就扣分） =====
+        x, y = self.agent_pos
+        # 检查上下左右是否有墙或障碍物
+        near_wall = 0
+        if y-1 < 0 or (x, y-1) in self.obstacles: near_wall += 1
+        if y+1 >= self.grid_size_y or (x, y+1) in self.obstacles: near_wall += 1
+        if x-1 < 0 or (x-1, y) in self.obstacles: near_wall += 1
+        if x+1 >= self.grid_size_x or (x+1, y) in self.obstacles: near_wall += 1
+        reward -= near_wall * 0.2   # 每靠近一个墙方向扣0.2分
 
 
         if self.agent_pos == self.goal_pos:

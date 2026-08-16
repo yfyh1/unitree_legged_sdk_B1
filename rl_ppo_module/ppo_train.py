@@ -62,7 +62,8 @@ def main():
         "MlpPolicy",
         env,
         verbose=1,
-        learning_rate=config["learning_rate"] 
+        learning_rate=config["learning_rate"],
+        ent_coef=config.get("ent_coef", 0.0)
     )
 
     # ---- 2.4 执行训练 ----

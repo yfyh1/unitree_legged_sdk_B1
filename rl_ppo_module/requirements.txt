@@ -17,4 +17,4 @@ tensorboard
 pyyaml==6.0.3
 
 # 生成 MP4 视频的编码器后端
-pip install imageio[ffmpeg]
+imageio[ffmpeg]
