@@ -110,7 +110,7 @@ def visualize_policy():
     # ---- 画障碍物（灰色） ----
     for (ox, oy) in obstacles:
         rect = plt.Rectangle((ox - 0.5, oy - 0.5), 1, 1,
-                             facecolor='black', edgecolor='black', alpha=0.6)
+                             facecolor='black', edgecolor='black')
         ax.add_patch(rect)
 
     # ---- 起点（白点）和终点（黄星） ----
@@ -174,7 +174,7 @@ def visualize_policy():
         # 叠加障碍物（半透明）
         for (ox, oy) in obstacles:
             rect = plt.Rectangle((ox - 0.5, oy - 0.5), 1, 1,
-                                 facecolor='black', edgecolor='black', alpha=0.3)
+                                 facecolor='black', edgecolor='black')
             ax.add_patch(rect)
 
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
