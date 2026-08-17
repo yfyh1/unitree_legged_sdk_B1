@@ -52,47 +52,47 @@ class GridNavEnv(gym.Env):
         # ]
         # -------- 障碍物整数区间 (x_min, x_max, y_min, y_max) ----------
         obstacle_rects_int = [
-            # (1, 12, 0, 1),    # 1
-            # (13, 16, 0, 1),   # 2
-            # (6, 8, 1, 2),     # 3
-            # (14, 15, 1, 2),   # 4
-            # (0, 1, 2, 18),    # 5
-            # (4, 6, 10, 12),   # 6
-            # (15, 16, 5, 6),   # 7
-            # (14, 15, 9, 10),  # 8
-            # (14, 16, 10, 13), # 9
-            # (0, 7, 20, 21),   # 10
-            # (14, 15, 20, 21), # 11
-            # (8, 15, 15, 20),  # 12
-            # # -------- 添加的四条边界墙壁 ----------
-            # (0, 15, 0, 0),    # 上边界 (y=0)
-            # (0, 15, 20, 20),  # 下边界 (y=20)
-            # (0, 0, 0, 20),    # 左边界 (x=0)
-            # (15, 15, 0, 20)   # 右边界 (x=15)
-        
-        
-            (0, 12, 0, 1),    # 1
+            (1, 12, 0, 1),    # 1
             (13, 16, 0, 1),   # 2
             (6, 8, 1, 2),     # 3
             (14, 15, 1, 2),   # 4
-            (0, 1, 2, 10),    # 5
-            (15, 16, 2, 9),   # 6
-            (14, 15, 5, 6),   # 7
+            (0, 1, 2, 18),    # 5
+            (4, 6, 10, 12),   # 6
+            (15, 16, 5, 6),   # 7
             (14, 15, 9, 10),  # 8
-            (4, 7, 10, 12), # 9
-            (13, 14, 10, 12),   # 10
-            (13, 16, 12, 15), # 11
-            (1, 8, 15, 19),  # 12
-            (11, 16, 15, 19),
-            (1, 16, 19, 20),
-            (0, 7, 20, 21),
-            (14, 16, 20, 21),
-            (0, 1, 17, 18),
+            (14, 16, 10, 13), # 9
+            (0, 7, 20, 21),   # 10
+            (14, 15, 20, 21), # 11
+            (8, 15, 15, 20),  # 12
             # -------- 添加的四条边界墙壁 ----------
             (0, 15, 0, 0),    # 上边界 (y=0)
             (0, 15, 20, 20),  # 下边界 (y=20)
             (0, 0, 0, 20),    # 左边界 (x=0)
             (15, 15, 0, 20)   # 右边界 (x=15)
+        
+        
+            # (0, 12, 0, 1),    # 1
+            # (13, 16, 0, 1),   # 2
+            # (6, 8, 1, 2),     # 3
+            # (14, 15, 1, 2),   # 4
+            # (0, 1, 2, 10),    # 5
+            # (15, 16, 2, 9),   # 6
+            # (14, 15, 5, 6),   # 7
+            # (14, 15, 9, 10),  # 8
+            # (4, 7, 10, 12), # 9
+            # (13, 14, 10, 12),   # 10
+            # (13, 16, 12, 15), # 11
+            # (1, 8, 15, 19),  # 12
+            # (11, 16, 15, 19),
+            # (1, 16, 19, 20),
+            # (0, 7, 20, 21),
+            # (14, 16, 20, 21),
+            # (0, 1, 17, 18),
+            # # -------- 添加的四条边界墙壁 ----------
+            # (0, 15, 0, 0),    # 上边界 (y=0)
+            # (0, 15, 20, 20),  # 下边界 (y=20)
+            # (0, 0, 0, 20),    # 左边界 (x=0)
+            # (15, 15, 0, 20)   # 右边界 (x=15)
         ]
 
         # -------- 生成障碍物坐标 ----------
@@ -116,7 +116,7 @@ class GridNavEnv(gym.Env):
         super().reset(seed=seed)
 
         # 设置目标终点（新位置，在右下角安全区）
-        self.goal_pos = [12, 0]     # x=14（最大15），y=19（最大20）
+        self.goal_pos = [1, 18]     # x=14（最大15），y=19（最大20）
 
         # ---- 随机生成起点（排除障碍物和终点） ----
         # 收集所有合法的白色格子（避开边界、障碍物、终点）
@@ -127,10 +127,22 @@ class GridNavEnv(gym.Env):
                 if (x, y) not in self.obstacles and [x, y] != self.goal_pos:
                     valid_positions.append([x, y])
 
-        # 从合法位置中随机选择一个作为起点
-        self.agent_pos = random.choice(valid_positions)
+        # 在 reset() 中，生成 valid_positions 之后，添加以下代码
+        custom_boundary_points = [(0,0), (13,20), (15,9), (15,20)]
+        # 过滤：排除障碍物和终点
+        valid_boundary_points = [p for p in custom_boundary_points if p not in self.obstacles and list(p) != self.goal_pos]
+
+        # 随机选择起点：30% 概率从边界点选，70% 从所有合法点选
+        if valid_boundary_points and random.random() < 0.3:
+            self.agent_pos = random.choice(valid_boundary_points)
+        else:
+            self.agent_pos = random.choice(valid_positions)
+
+        # # 从合法位置中随机选择一个作为起点
+        # self.agent_pos = random.choice(valid_positions)
 
         return self._get_obs(), {}
+
 
     # ----------------------------------------------------------
     # 1.3 辅助方法：生成观测值（4 维数组）
@@ -233,40 +245,41 @@ class GridNavEnv(gym.Env):
         if self.window is None:
             pygame.init()
             self.window = pygame.display.set_mode((self.width, self.height))
-            pygame.display.set_caption("AI Grid Navigation System (16x21)")
+            pygame.display.set_caption("AI Grid Navigation System")
             self.clock = pygame.time.Clock()
 
         pygame.event.pump()
         self.window.fill((255, 255, 255))
 
+        # ---- 画网格线 ----
+        # 竖线（x不变）
         for x in range(0, self.width, self.cell_size):
             pygame.draw.line(self.window, (220, 220, 220), (x, 0), (x, self.height))
-        for y in range(0, self.height, self.cell_size):
-            pygame.draw.line(self.window, (220, 220, 220), (0, y), (self.width, y))
+        # 横线（y翻转）
+        for y_logical in range(self.grid_size_y):
+            screen_y = (self.grid_size_y - 1 - y_logical) * self.cell_size
+            pygame.draw.line(self.window, (220, 220, 220), (0, screen_y), (self.width, screen_y))
 
+        # ---- 画障碍物 ----
         for obs in self.obstacles:
-            rect = pygame.Rect(
-                obs[0] * self.cell_size,
-                obs[1] * self.cell_size,
-                self.cell_size,
-                self.cell_size
-            )
+            x, y = obs
+            screen_x = x * self.cell_size
+            screen_y = (self.grid_size_y - 1 - y) * self.cell_size
+            rect = pygame.Rect(screen_x, screen_y, self.cell_size, self.cell_size)
             pygame.draw.rect(self.window, (0, 0, 0), rect)
 
-        goal_rect = pygame.Rect(
-            self.goal_pos[0] * self.cell_size,
-            self.goal_pos[1] * self.cell_size,
-            self.cell_size,
-            self.cell_size
-        )
+        # ---- 画目标点（红色） ----
+        gx, gy = self.goal_pos
+        screen_gx = gx * self.cell_size
+        screen_gy = (self.grid_size_y - 1 - gy) * self.cell_size
+        goal_rect = pygame.Rect(screen_gx, screen_gy, self.cell_size, self.cell_size)
         pygame.draw.rect(self.window, (231, 76, 60), goal_rect)
 
-        agent_rect = pygame.Rect(
-            self.agent_pos[0] * self.cell_size,
-            self.agent_pos[1] * self.cell_size,
-            self.cell_size,
-            self.cell_size
-        )
+        # ---- 画智能体（绿色） ----
+        ax, ay = self.agent_pos
+        screen_ax = ax * self.cell_size
+        screen_ay = (self.grid_size_y - 1 - ay) * self.cell_size
+        agent_rect = pygame.Rect(screen_ax, screen_ay, self.cell_size, self.cell_size)
         pygame.draw.rect(self.window, (46, 204, 113), agent_rect)
 
         pygame.display.flip()

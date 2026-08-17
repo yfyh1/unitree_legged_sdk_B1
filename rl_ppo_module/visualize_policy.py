@@ -18,7 +18,17 @@ from env_module.GridEnv import GridNavEnv
 import torch
 
 # ================== 中文字体设置 ==================
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
+plt.rcParams['font.sans-serif'] = [
+    'SimHei',                
+    'Microsoft YaHei',      
+    'Noto Sans CJK SC',     
+    'WenQuanYi Zen Hei',     
+    'WenQuanYi Micro Hei',   
+    'Noto Sans CJK SC', 
+    'AR PL UMing CN', 
+    'Droid Sans Fallback'
+    'Arial Unicode MS'      
+]
 plt.rcParams['axes.unicode_minus'] = False
 
 
@@ -58,7 +68,7 @@ def visualize_policy():
     env = GridNavEnv()
     env.reset()
     grid_x, grid_y = env.grid_size_x, env.grid_size_y
-    goal = env.goal_pos          # [12, 20]
+    goal = env.goal_pos          # 目标点
     start = env.agent_pos        # 随机起点
     obstacles = set(env.obstacles)
     print(f"地图尺寸: {grid_x} x {grid_y}, 终点: {goal}, 起点: {start}")
@@ -91,7 +101,7 @@ def visualize_policy():
     # =========================================================
     # 5. 绘制主图：决策地图
     # =========================================================
-    action_names = ['↑ 上', '↓ 下', '← 左', '→ 右']
+    action_names = ['↓ 下', '↑ 上', '← 左', '→ 右']
     cmap = ListedColormap(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3'])
 
     fig, ax = plt.subplots(figsize=(10, 12))
@@ -100,7 +110,7 @@ def visualize_policy():
     # ---- 画障碍物（灰色） ----
     for (ox, oy) in obstacles:
         rect = plt.Rectangle((ox - 0.5, oy - 0.5), 1, 1,
-                             facecolor='gray', edgecolor='black', alpha=0.6)
+                             facecolor='black', edgecolor='black', alpha=0.6)
         ax.add_patch(rect)
 
     # ---- 起点（白点）和终点（黄星） ----
@@ -164,7 +174,7 @@ def visualize_policy():
         # 叠加障碍物（半透明）
         for (ox, oy) in obstacles:
             rect = plt.Rectangle((ox - 0.5, oy - 0.5), 1, 1,
-                                 facecolor='gray', edgecolor='black', alpha=0.3)
+                                 facecolor='black', edgecolor='black', alpha=0.3)
             ax.add_patch(rect)
 
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
