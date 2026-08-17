@@ -1,8 +1,3 @@
-"""
-策略决策地图可视化（适配 8 维观测空间）
-显示地图上每个格子的最优动作（箭头）+ 实际行走路径
-同时生成各动作的概率热力图
-"""
 import sys
 from pathlib import Path
 
@@ -19,15 +14,15 @@ import torch
 
 # ================== 中文字体设置 ==================
 plt.rcParams['font.sans-serif'] = [
-    'SimHei',                
-    'Microsoft YaHei',      
-    'Noto Sans CJK SC',     
-    'WenQuanYi Zen Hei',     
-    'WenQuanYi Micro Hei',   
-    'Noto Sans CJK SC', 
-    'AR PL UMing CN', 
-    'Droid Sans Fallback'
-    'Arial Unicode MS'      
+    'SimHei',
+    'Microsoft YaHei',
+    'Noto Sans CJK SC',
+    'WenQuanYi Zen Hei',
+    'WenQuanYi Micro Hei',
+    'Noto Sans CJK SC',
+    'AR PL UMing CN',
+    'Droid Sans Fallback',
+    'Arial Unicode MS'
 ]
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -79,8 +74,10 @@ def visualize_policy():
     for y in range(grid_y):
         for x in range(grid_x):
             # 构造 8 维观测值: [x, y, goal_x, goal_y, up, down, left, right]
-            up = 0 if (y - 1 < 0 or (x, y - 1) in obstacles) else 1
-            down = 0 if (y + 1 >= grid_y or (x, y + 1) in obstacles) else 1
+            # 坐标轴：左下角原点，x向右，y向上
+            # up = y+1 方向，down = y-1 方向
+            up = 0 if (y + 1 >= grid_y or (x, y + 1) in obstacles) else 1
+            down = 0 if (y - 1 < 0 or (x, y - 1) in obstacles) else 1
             left = 0 if (x - 1 < 0 or (x - 1, y) in obstacles) else 1
             right = 0 if (x + 1 >= grid_x or (x + 1, y) in obstacles) else 1
             obs = np.array([x, y, goal[0], goal[1], up, down, left, right], dtype=np.float32)
@@ -101,13 +98,13 @@ def visualize_policy():
     # =========================================================
     # 5. 绘制主图：决策地图
     # =========================================================
-    action_names = ['↓ 下', '↑ 上', '← 左', '→ 右']
+    action_names = ['↑ 上', '↓ 下', '← 左', '→ 右']
     cmap = ListedColormap(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3'])
 
     fig, ax = plt.subplots(figsize=(10, 12))
     im = ax.imshow(best_actions, origin='lower', cmap=cmap, vmin=-0.5, vmax=3.5)
 
-    # ---- 画障碍物（灰色） ----
+    # ---- 画障碍物（黑色） ----
     for (ox, oy) in obstacles:
         rect = plt.Rectangle((ox - 0.5, oy - 0.5), 1, 1,
                              facecolor='black', edgecolor='black')
@@ -122,7 +119,8 @@ def visualize_policy():
         ax.plot(path_x, path_y, 'r--', linewidth=2.5, label='行走路径')
 
     # ---- 绘制动作箭头（跳过障碍物格子） ----
-    dirs = [(0, -1), (0, 1), (-1, 0), (1, 0)]   # 上、下、左、右
+    # 方向向量：上=(0,1)，下=(0,-1)，左=(-1,0)，右=(1,0)
+    dirs = [(0, 1), (0, -1), (-1, 0), (1, 0)]
     arrow_len = 0.3
 
     for y in range(grid_y):
@@ -137,10 +135,12 @@ def visualize_policy():
                      alpha=0.8, length_includes_head=True)
 
     # ---- 坐标轴与网格 ----
-    ax.set_xticks(np.arange(grid_x))
-    ax.set_yticks(np.arange(grid_y))
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
+    xticks = np.arange(0, grid_x, 5)
+    yticks = np.arange(0, grid_y, 5)
+    ax.set_xticks(xticks)
+    ax.set_yticks(yticks)
+    ax.set_xticklabels(xticks)
+    ax.set_yticklabels(yticks)
     ax.set_xlabel('X 坐标')
     ax.set_ylabel('Y 坐标')
     ax.set_title('PPO 策略决策地图 (最优动作 + 路径)', fontsize=16)
@@ -171,7 +171,7 @@ def visualize_policy():
         ax.set_xticks([])
         ax.set_yticks([])
 
-        # 叠加障碍物（半透明）
+        # 叠加障碍物（黑色，半透明）
         for (ox, oy) in obstacles:
             rect = plt.Rectangle((ox - 0.5, oy - 0.5), 1, 1,
                                  facecolor='black', edgecolor='black')

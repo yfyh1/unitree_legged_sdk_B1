@@ -21,16 +21,6 @@ def main():
         config = yaml.safe_load(f)
     print("📋 已加载配置:", config)
 
-    """
-    训练流程：
-      1. 创建 models/ 目录（用于保存模型）
-      2. 实例化 GridNavEnv 环境
-      3. 创建 PPO 模型（使用默认 MLP 网络，学习率 0.0005）
-      4. 训练 80,000 步（环境交互步数）
-      5. 保存模型到 models/ppo_grid_model.zip
-      6. 关闭环境
-    """
-
     # ---- 2.1 创建模型保存目录 ----
     # os.makedirs 递归创建目录，exist_ok=True 表示目录已存在时不报错
     os.makedirs("models", exist_ok=True)
