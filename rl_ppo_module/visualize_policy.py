@@ -99,7 +99,7 @@ def visualize_policy():
     # 5. 绘制主图：决策地图
     # =========================================================
     action_names = ['↑ 上', '↓ 下', '← 左', '→ 右']
-    cmap = ListedColormap(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3'])
+    cmap = ListedColormap(['#377eb8', '#e41a1c', '#4daf4a', '#984ea3'])
 
     fig, ax = plt.subplots(figsize=(10, 12))
     im = ax.imshow(best_actions, origin='lower', cmap=cmap, vmin=-0.5, vmax=3.5)

@@ -80,17 +80,23 @@ class GridNavEnv(gym.Env):
                 if (x, y) not in self.obstacles and [x, y] != self.goal_pos:
                     valid_positions.append([x, y])
 
-        # ---- 自定义四个边界点（新坐标系） ----
+        # ---- 自定义边界点----
         custom_boundary_points = [
             (0,0),
+            (0,18),
+            # (4,9),
+            (5,9),
+            (6,10),
+            # (6,11),
             (13,20),
+            (15,1),
             (15,9),
             (15,20)
         ]
         valid_boundary_points = [p for p in custom_boundary_points if p not in self.obstacles and list(p) != self.goal_pos]
 
         # 混合采样：30% 从边界点选，70% 从全体合法点选
-        if valid_boundary_points and random.random() < 0.3:
+        if valid_boundary_points and random.random() < 0.4:
             self.agent_pos = random.choice(valid_boundary_points)
         else:
             self.agent_pos = random.choice(valid_positions)
@@ -125,8 +131,8 @@ class GridNavEnv(gym.Env):
         old_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
 
         new_pos = list(self.agent_pos)
-        if action == 0:    new_pos[1] += 1   # 上 (y增加)
-        elif action == 1:  new_pos[1] -= 1   # 下 (y减少)
+        if action == 0:    new_pos[1] += 1   # 上
+        elif action == 1:  new_pos[1] -= 1   # 下
         elif action == 2:  new_pos[0] -= 1   # 左
         elif action == 3:  new_pos[0] += 1   # 右
 
@@ -136,16 +142,16 @@ class GridNavEnv(gym.Env):
         # 边界碰撞
         if (new_pos[0] < 0 or new_pos[0] >= self.grid_size_x or
             new_pos[1] < 0 or new_pos[1] >= self.grid_size_y):
-            reward = -20.0
+            reward = -50.0
             terminated = True
         # 障碍物碰撞
         elif tuple(new_pos) in self.obstacles:
-            reward = -20.0
+            reward = -50.0
             terminated = True
         else:
             self.agent_pos = new_pos
             new_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
-            reward = (old_dist - new_dist) * 2.0
+            reward = (old_dist - new_dist) * 1.0
             reward -= 0.2
 
         # 濒墙惩罚
@@ -155,7 +161,7 @@ class GridNavEnv(gym.Env):
         if y-1 < 0 or (x, y-1) in self.obstacles: near_wall += 1
         if x-1 < 0 or (x-1, y) in self.obstacles: near_wall += 1
         if x+1 >= self.grid_size_x or (x+1, y) in self.obstacles: near_wall += 1
-        reward -= near_wall * 0.2
+        reward -= near_wall * 0.1
 
         # 到达终点
         if self.agent_pos == self.goal_pos:
@@ -164,9 +170,6 @@ class GridNavEnv(gym.Env):
 
         return self._get_obs(), reward, terminated, False, {}
 
-    # ----------------------------------------------------------
-    # render：将逻辑坐标（左下角原点）映射到屏幕坐标（左上角原点）
-    # ----------------------------------------------------------
     def render(self):
         if self.window is None:
             pygame.init()
