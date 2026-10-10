@@ -86,7 +86,7 @@ class GridNavEnv(gym.Env):
             # x=12
             (12,0),(12,1),(12,2),(12,18),(12,19),
             # x=13
-            # (13,12),
+            (13,12),
             # x=14 无黑色
             # x=15
             (15,4),(15,5),(15,6),(15,7),(15,10),(15,18),(15,19)
@@ -125,6 +125,8 @@ class GridNavEnv(gym.Env):
             (0,15),
             (2,19),
             (4,17),
+            (13,11),
+            (12,12)
         ]
         valid_boundary_points = [p for p in custom_boundary_points if p not in self.obstacles and list(p) != self.goal_pos]
 
@@ -160,6 +162,50 @@ class GridNavEnv(gym.Env):
     # ----------------------------------------------------------
     # step：核心逻辑（左下角原点坐标系）
     # ----------------------------------------------------------
+    # def step(self, action):
+    #     old_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
+
+    #     new_pos = list(self.agent_pos)
+    #     if action == 0:    new_pos[1] += 1   # 上
+    #     elif action == 1:  new_pos[1] -= 1   # 下
+    #     elif action == 2:  new_pos[0] -= 1   # 左
+    #     elif action == 3:  new_pos[0] += 1   # 右
+
+    #     terminated = False
+    #     reward = 0.0
+
+    #     # 边界碰撞
+    #     if (new_pos[0] < 0 or new_pos[0] >= self.grid_size_x or
+    #         new_pos[1] < 0 or new_pos[1] >= self.grid_size_y):
+    #         reward = -50.0
+    #         terminated = True
+    #     # 障碍物碰撞
+    #     elif tuple(new_pos) in self.obstacles:
+    #         reward = -50.0
+    #         terminated = True
+    #     else:
+    #         self.agent_pos = new_pos
+    #         new_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
+    #         reward = (old_dist - new_dist) * 1.0
+    #         reward -= 0.2
+
+    #     # 濒墙惩罚
+    #     x, y = self.agent_pos
+    #     near_wall = 0
+    #     if y+1 >= self.grid_size_y or (x, y+1) in self.obstacles: near_wall += 1
+    #     if y-1 < 0 or (x, y-1) in self.obstacles: near_wall += 1
+    #     if x-1 < 0 or (x-1, y) in self.obstacles: near_wall += 1
+    #     if x+1 >= self.grid_size_x or (x+1, y) in self.obstacles: near_wall += 1
+    #     reward -= near_wall * 0.1
+
+    #     # 到达终点
+    #     if self.agent_pos == self.goal_pos:
+    #         reward = 100.0
+    #         terminated = True
+
+    #     return self._get_obs(), reward, terminated, False, {}
+
+
     def step(self, action):
         old_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
 
@@ -172,36 +218,36 @@ class GridNavEnv(gym.Env):
         terminated = False
         reward = 0.0
 
-        # 边界碰撞
-        if (new_pos[0] < 0 or new_pos[0] >= self.grid_size_x or
-            new_pos[1] < 0 or new_pos[1] >= self.grid_size_y):
-            reward = -50.0
-            terminated = True
-        # 障碍物碰撞
-        elif tuple(new_pos) in self.obstacles:
-            reward = -50.0
-            terminated = True
+        # ---- 碰撞检测（边界 + 障碍物合并处理） ----
+        hit = (new_pos[0] < 0 or new_pos[0] >= self.grid_size_x or
+            new_pos[1] < 0 or new_pos[1] >= self.grid_size_y or
+            tuple(new_pos) in self.obstacles)
+
+        if hit:
+            reward = -5.0          # 从 -50 改为 -5，惩罚大幅降低
+            # ❌ 不终止！让智能体学会"撞了墙就换个方向"
         else:
             self.agent_pos = new_pos
             new_dist = self._manhattan_distance(self.agent_pos, self.goal_pos)
-            reward = (old_dist - new_dist) * 1.0
-            reward -= 0.2
+            reward = (old_dist - new_dist) * 2.0   # 距离引导从 ×1.0 提升到 ×2.0
+            reward -= 0.05                          # 每步惩罚从 0.2 降到 0.05
 
-        # 濒墙惩罚
-        x, y = self.agent_pos
-        near_wall = 0
-        if y+1 >= self.grid_size_y or (x, y+1) in self.obstacles: near_wall += 1
-        if y-1 < 0 or (x, y-1) in self.obstacles: near_wall += 1
-        if x-1 < 0 or (x-1, y) in self.obstacles: near_wall += 1
-        if x+1 >= self.grid_size_x or (x+1, y) in self.obstacles: near_wall += 1
-        reward -= near_wall * 0.1
+        # ---- ❌ 删除濒墙惩罚（整段注释掉） ----
+        # x, y = self.agent_pos
+        # near_wall = 0
+        # if y+1 >= self.grid_size_y or (x, y+1) in self.obstacles: near_wall += 1
+        # if y-1 < 0 or (x, y-1) in self.obstacles: near_wall += 1
+        # if x-1 < 0 or (x-1, y) in self.obstacles: near_wall += 1
+        # if x+1 >= self.grid_size_x or (x+1, y) in self.obstacles: near_wall += 1
+        # reward -= near_wall * 0.1
 
-        # 到达终点
+        # ---- 到达终点 ----
         if self.agent_pos == self.goal_pos:
-            reward = 100.0
+            reward = 200.0          # 从 100 提升到 200
             terminated = True
 
         return self._get_obs(), reward, terminated, False, {}
+
 
     def render(self):
         if self.window is None:
